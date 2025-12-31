@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aphex Twin - Stone In Focus with Comments</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #808080;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            aspect-ratio: 16 / 9;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .comment-bubble {
+            position: fixed;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            max-width: 350px;
+            font-size: 14px;
+            line-height: 1.5;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .comment-bubble.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .comment-bubble::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+
+        .comment-bubble.left::before {
+            left: -10px;
+            top: 20px;
+            border-width: 10px 10px 10px 0;
+            border-color: transparent white transparent transparent;
+        }
+
+        .comment-bubble.right::before {
+            right: -10px;
+            top: 20px;
+            border-width: 10px 0 10px 10px;
+            border-color: transparent transparent transparent white;
+        }
+
+        .comment-bubble.top::before {
+            top: -10px;
+            left: 30px;
+            border-width: 0 10px 10px 10px;
+            border-color: transparent transparent white transparent;
+        }
+
+        .comment-bubble.bottom::before {
+            bottom: -10px;
+            left: 30px;
+            border-width: 10px 10px 0 10px;
+            border-color: white transparent transparent transparent;
+        }
+
+        .author {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .text {
+            color: #333;
+        }
+
+        .likes {
+            color: #999;
+            font-size: 11px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            text-align: center;
+            z-index: 3000;
+        }
+
+        .instructions h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .instructions ol {
+            text-align: left;
+            margin: 20px 0;
+            padding-left: 30px;
+        }
+
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .instructions code {
+            background: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #e74c3c;
+        }
+
+        .instructions button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .instructions button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions" id="instructions">
+        <h2>📹 Setup Instructions</h2>
+        <ol>
+            <li>Save this HTML file to your computer (right-click → Save As)</li>
+            <li>Put your video file <code>Aphex Twin - Stone In Focus.mp4</code> in the <strong>same folder</strong></li>
+            <li>Or rename line 211 in this file to match your video filename</li>
+            <li>Double-click this HTML file to open it in your browser</li>
+        </ol>
+        <button onclick="document.getElementById('instructions').style.display='none'; startComments();">
+            Let's Go!
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="video-wrapper">
+            <video id="videoPlayer" controls loop autoplay>
+                <source src="Aphex Twin - Stone In Focus.mp4" type="video/mp4">
+            </video>
+        </div>
+    </div>
+
+    <script>
+        // Real YouTube comments from Aphex Twin - Stone In Focus
+        const comments = [
+            { text: "Just came here to check on everyone. Merry Christmas, hope you win all the battles you tell no one about and you take good care of yourself" },
+            { text: "I'm lying down next to a girl that I think I'm falling in love with. She's asleep and I'm listening on my headphones. Life is good and also weird and also confusing and I'm also unsure. What a trip" },
+            { text: "Holding my sleeping son, 8 weeks old, listening to this Friday night after a long week. Comments carved in stone." },
+            { text: "This is how it feels when a good day ends and you know you will remember this day often in the future." },
+            { text: "This is how it feels to not know if you're getting better or worse and you're stuck between wanting to keep fighting or just let go" },
+            { text: "My friend lost his battle against cancer this morning. He was the most amazing person i have ever met. I'm currently just not even sure what to do with my life, he has brought so much joy into my world. And now he's gone. Rest in peace, Matthew, you will be immensely missed." },
+            { text: "I'm 51. I have no 'good ole days' from my childhood to attach this to. But my daughter and my grandchildren will. Right now are my good ole days. I'm happy to be here." },
+            { text: "My kids are asleep upstairs, they are safe, they are healthy, we are happy…life is good." },
+            { text: "This is incredible to me. All of us listening to the same song, reading each other's comments. Learning about each other and knowing we will never meet. Never know what each other look like in person." },
+            { text: "In a couple of weeks I'll be 1000 days clean" },
+            { text: "This is not just music. It's like a blank canvas, upon which we can paint our emotions, thoughts and stories." },
+            { text: "Just glad to be here, with you, stranger" },
+            { text: "Hopefully, someday, I come back again to this song, and feel better than I feel right now." },
+            { text: '"When a man is in despair, it means that he still believes in something." - Dmitri Shostakovich' },
+            { text: "Consciousness is a hell of a drug." },
+            { text: "I don't think I've ever come across a more beautiful, heartfelt comment section. I wish you all well." },
+            { text: '"If you are depressed, you are living in the past. If you are anxious, you are living in the future. If you are at peace, you are living in the present." —Lao Tzu.' },
+            { text: "Still around after 4 years on dialysis, 30 years old. Merry Christmass everyone." },
+            { text: "I come by every now and then to read what people are leaving here. This place gives me a sense of strong connection with all of you sharing personal stories. I feel your energy, we're in this together." },
+            { text: "I love how three chords turn everyone here into philosophers" },
+            { text: '"An idiot admires complexity, a genius admires simplicity" - Terry A. Davis' },
+            { text: "If life was a videogame, this would be its main menu theme." },
+            { text: "this is a certified hood classic" },
+            { text: "We played this during my brother's funeral. So thankful for Aphex. It still hurts" },
+            { text: "I played this for my father today who is 94 he can't see very well and couldn't see this beauty being in the water but he sat with his eyes closed listening meditating on it and every two or three minutes saying 'wow'." },
+            { text: "All the decisions you have ever made in life have led up to this exact moment" },
+            { text: "for you who are reading this message, I want you to swear that you will never give up, no matter what happens in life, always believe that something beautiful will happen." },
+            { text: "We must return to monke" }
+        ];
+
+        function createCommentBubble() {
+            console.log('Creating bubble...');
+            
+            const comment = comments[Math.floor(Math.random() * comments.length)];
+            const bubble = document.createElement('div');
+            bubble.className = 'comment-bubble';
+            
+            const positions = ['left', 'right', 'top', 'bottom'];
+            const position = positions[Math.floor(Math.random() * positions.length)];
+            bubble.classList.add(position);
+
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            let left, top;
+            
+            switch(position) {
+                case 'left':
+                    left = Math.random() * (viewportWidth * 0.08);
+                    top = Math.random() * (viewportHeight - 120);
+                    break;
+                case 'right':
+                    left = viewportWidth * 0.88 + Math.random() * (viewportWidth * 0.08);
+                    top = Math.random() * (viewportHeight - 120);
+                    break;
+                case 'top':
+                    left = Math.random() * (viewportWidth - 370);
+                    top = Math.random() * (viewportHeight * 0.08) + 60;
+                    break;
+                case 'bottom':
+                    left = Math.random() * (viewportWidth - 370);
+                    top = viewportHeight * 0.88 + Math.random() * (viewportHeight * 0.08);
+                    break;
+            }
+
+            bubble.style.left = Math.max(10, Math.min(left, viewportWidth - 370)) + 'px';
+            bubble.style.top = Math.max(10, Math.min(top, viewportHeight - 120)) + 'px';
+            
+            bubble.innerHTML = `<div class="text">${comment.text}</div>`;
+            
+            document.body.appendChild(bubble);
+            console.log('Bubble added to DOM');
+            
+            setTimeout(() => {
+                bubble.classList.add('show');
+                console.log('Bubble shown');
+            }, 50);
+            
+            setTimeout(() => {
+                bubble.classList.remove('show');
+                setTimeout(() => {
+                    bubble.remove();
+                    console.log('Bubble removed');
+                }, 300);
+            }, 7000);
+        }
+
+        function startComments() {
+            createCommentBubble();
+            // Show next comment after current one fades (7s display + 0.3s fade + 0.5s gap)
+            const nextDelay = 7800;
+            setTimeout(startComments, nextDelay);
+        }
+
+        // Auto-start comments when video loads
+        document.getElementById('videoPlayer').addEventListener('loadeddata', () => {
+            document.getElementById('instructions').style.display = 'none';
+            setTimeout(() => startComments(), 1000);
+        });
+    </script>
+</body>
+</html>
